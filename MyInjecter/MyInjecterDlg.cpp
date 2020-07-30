@@ -8,6 +8,7 @@
 #include "afxdialogex.h"
 #include "InjectUtil.h"
 #include "LogFile.h"
+#include "Utility.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -66,6 +67,10 @@ BEGIN_MESSAGE_MAP(CMyInjecterDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_INJECT, &CMyInjecterDlg::OnBnClickedInject)
+    ON_BN_CLICKED(IDC_BROWSER_DLL, &CMyInjecterDlg::OnBnClickedBrowser)
+    ON_BN_CLICKED(IDC_LANCH, &CMyInjecterDlg::OnBnClickedLanch)
+    ON_BN_CLICKED(IDC_BROWSER_EXE, &CMyInjecterDlg::OnBnClickedBrowserExe)
+    ON_BN_CLICKED(IDC_UNINJECT, &CMyInjecterDlg::OnBnClickedUninject)
 END_MESSAGE_MAP()
 
 
@@ -101,6 +106,32 @@ BOOL CMyInjecterDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
+    CHAR szPath[MAX_PATH] = {0};
+    ::GetModuleFileName(NULL, (LPTSTR)szPath, MAX_PATH);
+    ::PathRemoveFileSpec((LPTSTR)szPath);
+    ::PathRemoveBackslash((LPTSTR)szPath);
+    ::PathAppend((LPTSTR)szPath, _T("set.ini"));
+    CString strIniPath = (LPCTSTR)szPath;
+
+    GetPrivateProfileString(
+        _T("Work Parameter"),       // section name
+        _T("Last Exe Path"),	// key name
+        _T(""),
+        (LPTSTR)szPath,
+        255,
+        (LPCTSTR)strIniPath		    // initialization file name
+        ); 
+    this->SetDlgItemText(IDC_EDIT_EXE_PATH, (LPCTSTR)szPath);
+
+    GetPrivateProfileString(
+        _T("Work Parameter"),       // section name
+        _T("Last Dll Path"),	// key name
+        _T(""),
+        (LPTSTR)szPath,
+        255,
+        (LPCTSTR)strIniPath		    // initialization file name
+        ); 
+    this->SetDlgItemText(IDC_EDIT_DLL_PATH, (LPCTSTR)szPath);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -160,29 +191,228 @@ void CMyInjecterDlg::OnBnClickedInject()
 	CString strDllPath;
 	this->GetDlgItemText(IDC_EDIT_DLL_PATH, strDllPath);
 	DWORD dwPid = this->GetDlgItemInt(IDC_EDIT_PID);
+    if(strDllPath.IsEmpty())
+    {
+        this->MessageBox(_T("The DLL name cannot be empty."), _T("Warning"), MB_OK | MB_ICONWARNING);
+        this->GetDlgItem(IDC_EDIT_DLL_PATH)->SetFocus();
+        return;
+    }
 
-    //CLogFile gSendLog(_T("send.log"));
-    //gSendLog.Log(LPCTSTR(strDllPath));
-    //gSendLog.LogHex(LPCTSTR(strDllPath));
+    if(dwPid == 0)
+    {
+        this->MessageBox(_T("The target process id cannot be empty."), _T("Warning"), MB_OK | MB_ICONWARNING);
+        this->GetDlgItem(IDC_EDIT_PID)->SetFocus();
+        return;
+    }
 
+    // 保存程序路径
+    CHAR szPath[MAX_PATH] = {0};
+    ::GetModuleFileName(NULL, (LPTSTR)szPath, MAX_PATH);
+    ::PathRemoveFileSpec((LPTSTR)szPath);
+    ::PathRemoveBackslash((LPTSTR)szPath);
+    ::PathAppend((LPTSTR)szPath, _T("set.ini"));
+    WritePrivateProfileString(
+        _T("Work Parameter"),       // section name
+        _T("Last Dll Path"),	    // key name
+        (LPCTSTR)strDllPath,	    // string to add
+        (LPCTSTR)szPath             // initialization file name
+        ); 
+
+    CString strError;
 	OSType osType = CheckOS();
 	switch(osType)
 	{
 	case WindowsXP:
-		break;
 	case WindowsVista:
-		break;
 	case Windows7:
-		break;
 	case Windows10:
-		if(InjectDll4Win10(dwPid, (LPCTSTR)strDllPath))
-		{
-			this->SetDlgItemText(IDC_EDIT_LOG, _T("注入成功"));
-		}
-		else
-		{
-			this->SetDlgItemText(IDC_EDIT_LOG, _T("注入失败"));
-		}
+        {
+            char* pDllPath = NULL;
+#ifdef UNICODE
+            pDllPath = WideStringToAnsiString((LPCTSTR)strDllPath);
+#else
+            pDllPath = (LPTSTR)(LPCTSTR)strDllPath;
+#endif
+            if(InjectByPid(dwPid, pDllPath))
+            {
+                this->SetDlgItemText(IDC_EDIT_LOG, _T("注入成功"));
+            }
+            else
+            {
+                this->SetDlgItemText(IDC_EDIT_LOG, _T("注入失败"));
+            }
+#ifdef UNICODE
+            free(pDllPath); pDllPath = NULL;
+#endif
+
+        }
 		break;
+    default:
+        break;
 	}
 }
+
+void CMyInjecterDlg::OnBnClickedUninject()
+{
+    CString strDllPath;
+    this->GetDlgItemText(IDC_EDIT_DLL_PATH, strDllPath);
+    DWORD dwPid = this->GetDlgItemInt(IDC_EDIT_PID);
+    if(strDllPath.IsEmpty())
+    {
+        this->MessageBox(_T("The DLL name cannot be empty."), _T("Warning"), MB_OK | MB_ICONWARNING);
+        this->GetDlgItem(IDC_EDIT_DLL_PATH)->SetFocus();
+        return;
+    }
+
+    if(dwPid == 0)
+    {
+        this->MessageBox(_T("The target process id cannot be empty."), _T("Warning"), MB_OK | MB_ICONWARNING);
+        this->GetDlgItem(IDC_EDIT_PID)->SetFocus();
+        return;
+    }
+
+    // 保存程序路径
+    CHAR szPath[MAX_PATH] = {0};
+    ::GetModuleFileName(NULL, (LPTSTR)szPath, MAX_PATH);
+    ::PathRemoveFileSpec((LPTSTR)szPath);
+    ::PathRemoveBackslash((LPTSTR)szPath);
+    ::PathAppend((LPTSTR)szPath, _T("set.ini"));
+    WritePrivateProfileString(
+        _T("Work Parameter"),       // section name
+        _T("Last Dll Path"),	    // key name
+        (LPCTSTR)strDllPath,	    // string to add
+        (LPCTSTR)szPath             // initialization file name
+        ); 
+
+    CString strError;
+    OSType osType = CheckOS();
+    switch(osType)
+    {
+    case WindowsXP:
+    case WindowsVista:
+    case Windows7:
+    case Windows10:
+        {
+            char* pDllPath = NULL;
+#ifdef UNICODE
+            pDllPath = WideStringToAnsiString((LPCTSTR)strDllPath);
+#else
+            pDllPath = (LPTSTR)(LPCTSTR)strDllPath;
+#endif
+            if(UnInjectByPid(dwPid, pDllPath))
+            {
+                this->SetDlgItemText(IDC_EDIT_LOG, _T("撤销注入成功"));
+            }
+            else
+            {
+                this->SetDlgItemText(IDC_EDIT_LOG, _T("撤销注入失败"));
+            }
+#ifdef UNICODE
+            free(pDllPath); pDllPath = NULL;
+#endif
+
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void CMyInjecterDlg::OnBnClickedBrowser()
+{
+    const TCHAR szFilter[] = _T("File list (*.dll)|*.dll|All (*.*)|*.*||");
+    CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_ALLOWMULTISELECT, szFilter);
+    if(dlg.DoModal() == IDOK)   
+    { 
+        CString strFilePath = dlg.GetPathName();
+        this->SetDlgItemText(IDC_EDIT_DLL_PATH, strFilePath);
+    }	
+}
+
+void CMyInjecterDlg::OnBnClickedLanch()
+{
+    CString strExePath;
+    this->GetDlgItemText(IDC_EDIT_EXE_PATH, strExePath);
+    if(strExePath.IsEmpty())
+    {
+        this->MessageBox(_T("The exe name cannot be empty."), _T("Warning"), MB_OK | MB_ICONWARNING);
+        this->GetDlgItem(IDC_EDIT_EXE_PATH)->SetFocus();
+        return;
+    }
+
+    CString strDllPath;
+    this->GetDlgItemText(IDC_EDIT_DLL_PATH, strDllPath);
+    DWORD dwPid = this->GetDlgItemInt(IDC_EDIT_PID);
+    if(strDllPath.IsEmpty())
+    {
+        this->MessageBox(_T("The DLL name cannot be empty."), _T("Warning"), MB_OK | MB_ICONWARNING);
+        this->GetDlgItem(IDC_EDIT_DLL_PATH)->SetFocus();
+        return;
+    }
+
+    // 保存程序路径
+    CHAR szPath[MAX_PATH] = {0};
+    ::GetModuleFileName(NULL, (LPTSTR)szPath, MAX_PATH);
+    ::PathRemoveFileSpec((LPTSTR)szPath);
+    ::PathRemoveBackslash((LPTSTR)szPath);
+    ::PathAppend((LPTSTR)szPath, _T("set.ini"));
+    WritePrivateProfileString(
+        _T("Work Parameter"),       // section name
+        _T("Last Exe Path"),	    // key name
+        (LPCTSTR)strExePath,	    // string to add
+        (LPCTSTR)szPath             // initialization file name
+        ); 
+
+    WritePrivateProfileString(
+        _T("Work Parameter"),       // section name
+        _T("Last Dll Path"),	    // key name
+        (LPCTSTR)strDllPath,	    // string to add
+        (LPCTSTR)szPath             // initialization file name
+        ); 
+
+    CString strError;
+    OSType osType = CheckOS();
+    switch(osType)
+    {
+    case WindowsXP:
+    case WindowsVista:
+    case Windows7:
+    case Windows10:
+        {
+            char* pDllPath = NULL;
+#ifdef UNICODE
+            pDllPath = WideStringToAnsiString((LPCTSTR)strDllPath);
+#else
+            pDllPath = (LPTSTR)(LPCTSTR)strDllPath;
+#endif
+            DWORD dwPid = 0;
+            if(LanchProcess((LPCTSTR)strExePath, NULL, NULL, 0, pDllPath, dwPid, strError))
+            {
+                this->SetDlgItemInt(IDC_EDIT_PID, dwPid);
+                this->SetDlgItemText(IDC_EDIT_LOG, _T("注入成功"));
+            }
+            else
+            {
+                this->SetDlgItemText(IDC_EDIT_LOG, _T("注入失败：") + strError);
+            }
+#ifdef UNICODE
+            free(pDllPath); pDllPath = NULL;
+#endif
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void CMyInjecterDlg::OnBnClickedBrowserExe()
+{
+    const TCHAR szFilter[] = _T("File list (*.exe)|*.exe|All (*.*)|*.*||");
+    CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_ALLOWMULTISELECT, szFilter);
+    if(dlg.DoModal() == IDOK)   
+    { 
+        CString strFilePath = dlg.GetPathName();
+        this->SetDlgItemText(IDC_EDIT_EXE_PATH, strFilePath);
+    }	
+}
+

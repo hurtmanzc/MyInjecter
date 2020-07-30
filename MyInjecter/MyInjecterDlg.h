@@ -31,4 +31,8 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedInject();
+    afx_msg void OnBnClickedBrowser();
+    afx_msg void OnBnClickedLanch();
+    afx_msg void OnBnClickedBrowserExe();
+    afx_msg void OnBnClickedUninject();
 };

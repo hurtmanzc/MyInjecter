@@ -8,8 +8,8 @@
 //#pragma comment (lib, "..\\detours\\lib\\detours.lib")
 //#pragma comment (lib, "..\\detours\\lib\\syelog.lib")
 
-CLogFile gSendLog("send.log");
-CLogFile gRecvLog("recv.log");
+CLogFile gSendLog(_T("send.log"));
+CLogFile gRecvLog(_T("recv.log"));
 
 BOOL DetourApi(PVOID *ppPointer, PVOID pDetour)
 {

@@ -85,7 +85,7 @@ BOOL CPuppetApp::InitInstance()
 	DWORD dwCurPid = GetCurrentProcessId();
 	DWORD dwCurTid = GetCurrentThreadId();
 	DWORD dwMainTid = GetMainThread(dwCurPid);
-	DBGPRINT("GHDll DLL_PROCESS_ATTACH CurPid=%d CurTid=%d MainTid=%d", dwCurPid, dwCurTid, dwMainTid);
+	DBGPRINT("Puppet DLL_PROCESS_ATTACH CurPid=%d CurTid=%d MainTid=%d", dwCurPid, dwCurTid, dwMainTid);
 
 	HookFunctions();
 
@@ -95,10 +95,9 @@ BOOL CPuppetApp::InitInstance()
 
 int CPuppetApp::ExitInstance()
 {
-
 	DWORD dwMainTid = GetMainThread(GetCurrentProcessId());
 	DWORD dwCurTid = GetCurrentThreadId();
-	DBGPRINT("GHDll DLL_PROCESS_DETACH CurTid=%d MainTid=%d", dwCurTid, dwMainTid);
+	DBGPRINT("Puppet DLL_PROCESS_DETACH CurTid=%d MainTid=%d", dwCurTid, dwMainTid);
 
 	UnHookFunctions();
 
