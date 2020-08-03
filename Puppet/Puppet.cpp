@@ -10,29 +10,6 @@
 #define new DEBUG_NEW
 #endif
 
-// inline hook 一些函数
-BOOL HookFunctions()
-{
-	DWORD dwMainTid = GetMainThread(GetCurrentProcessId());
-	DWORD dwCurTid = GetCurrentThreadId();
-	DBGPRINT("HookFunctions CurTid=%d MainTid=%d", dwCurTid, dwMainTid);
-
-	DoDetour();
-
-	return TRUE;
-}
-
-// inline hook 一些函数
-BOOL UnHookFunctions()
-{
-	DWORD dwMainTid = GetMainThread(GetCurrentProcessId());
-	DWORD dwCurTid = GetCurrentThreadId();
-	DBGPRINT("UnHookFunctions CurTid=%d MainTid=%d", dwCurTid, dwMainTid);
-
-	DoUndetour();
-
-	return TRUE;
-}
 //
 //TODO: 如果此 DLL 相对于 MFC DLL 是动态链接的，
 //		则从此 DLL 导出的任何调入
@@ -87,7 +64,7 @@ BOOL CPuppetApp::InitInstance()
 	DWORD dwMainTid = GetMainThread(dwCurPid);
 	DBGPRINT("Puppet DLL_PROCESS_ATTACH CurPid=%d CurTid=%d MainTid=%d", dwCurPid, dwCurTid, dwMainTid);
 
-	HookFunctions();
+	DoDetour();
 
 	return TRUE;
 }
@@ -99,7 +76,7 @@ int CPuppetApp::ExitInstance()
 	DWORD dwCurTid = GetCurrentThreadId();
 	DBGPRINT("Puppet DLL_PROCESS_DETACH CurTid=%d MainTid=%d", dwCurTid, dwMainTid);
 
-	UnHookFunctions();
+	DoUndetour();
 
 	return CWinApp::ExitInstance();
 }

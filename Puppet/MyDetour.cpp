@@ -48,7 +48,7 @@ static BOOL (WINAPI * sysIsDebuggerPresent)(VOID) = IsDebuggerPresent;
 BOOL WINAPI myIsDebuggerPresent ( VOID )
 {
 	DWORD dwThreadId = ::GetCurrentThreadId();
-	dbgprint("myIsDebuggerPresent dwThreadId=%d", dwThreadId);
+	DBGPRINT("myIsDebuggerPresent dwThreadId=%d", dwThreadId);
     return FALSE;
 }
 
@@ -56,7 +56,7 @@ static LRESULT (WINAPI * sysCallNextHookEx)( HHOOK hhk, int nCode, WPARAM wParam
 LRESULT WINAPI myCallNextHookEx(  HHOOK hhk, int nCode, WPARAM wParam, LPARAM lParam)
 {
 	//DWORD dwThreadId = ::GetCurrentThreadId();
-	//dbgprint("myCallNextHookEx dwThreadId=%d hhk=%d", dwThreadId, hhk);
+	//DBGPRINT("myCallNextHookEx dwThreadId=%d hhk=%d", dwThreadId, hhk);
 	return sysCallNextHookEx( hhk, nCode, wParam, lParam);
 }
 
@@ -83,7 +83,7 @@ LRESULT CALLBACK myKeyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 			nParam=2;
 
 		KBDLLHOOKSTRUCT *hookStruct = (KBDLLHOOKSTRUCT*)lParam;
-		dbgprint("myKeyboardHookProc dwThreadId=%d vkCode=%d", dwThreadId, hookStruct->vkCode);
+		DBGPRINT("myKeyboardHookProc dwThreadId=%d vkCode=%d", dwThreadId, hookStruct->vkCode);
 	}
 
 	//if(s_KbdHookMap[dwThreadId].lpfn != NULL 
@@ -93,7 +93,7 @@ LRESULT CALLBACK myKeyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 	//}
 
 	HHOOK hHook = s_KbdHookMap[dwThreadId].hHook;
-	dbgprint("myKeyboardHookProc dwThreadId=%d CallNextHookEx=%d", dwThreadId, (DWORD)hHook);
+	DBGPRINT("myKeyboardHookProc dwThreadId=%d CallNextHookEx=%d", dwThreadId, (DWORD)hHook);
 	return sysCallNextHookEx(hHook, nCode, wParam, lParam);
 }
 
@@ -114,7 +114,7 @@ LRESULT CALLBACK myKeyboardLLHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 			nParam=2;
 
 		KBDLLHOOKSTRUCT *hookStruct = (KBDLLHOOKSTRUCT*)lParam;
-		dbgprint("myKeyboardLLHookProc vkCode=%d", hookStruct->vkCode);
+		DBGPRINT("myKeyboardLLHookProc vkCode=%d", hookStruct->vkCode);
 	}
 
 	//if(s_KbdLLHookMap[dwThreadId].lpfn != NULL 
@@ -124,7 +124,7 @@ LRESULT CALLBACK myKeyboardLLHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 	//}
 
 	HHOOK hHook = s_KbdLLHookMap[dwThreadId].hHook;
-	dbgprint("myKeyboardLLHookProc CallNextHookEx=%d", (DWORD)hHook);
+	DBGPRINT("myKeyboardLLHookProc CallNextHookEx=%d", (DWORD)hHook);
 	return sysCallNextHookEx(hHook, nCode, wParam, lParam);
 }
 
@@ -133,7 +133,7 @@ LRESULT CALLBACK myMsgFilterHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	DWORD dwThreadId = ::GetCurrentThreadId();
 	HHOOK hHook = s_MsgFilterHookMap[dwThreadId].hHook;
-	dbgprint("myMsgFilterHookProc dwThreadId=%d", dwThreadId);
+	DBGPRINT("myMsgFilterHookProc dwThreadId=%d", dwThreadId);
 	return sysCallNextHookEx(hHook, nCode, wParam, lParam);
 }
 
@@ -214,7 +214,7 @@ HHOOK WINAPI mySetWindowsHookExA( int idHook, HOOKPROC lpfn,  HINSTANCE hmod, DW
 		break;
 	}
 
-	dbgprint("mySetWindowsHookExA idHook=%d dwThreadId=%d hhk=%d lpfn=%d", idHook, dwThreadId, (DWORD)hHook, (DWORD)lpfn);
+	DBGPRINT("mySetWindowsHookExA idHook=%d dwThreadId=%d hhk=%d lpfn=%d", idHook, dwThreadId, (DWORD)hHook, (DWORD)lpfn);
 	return hHook;
 }
 
@@ -222,7 +222,7 @@ BOOL (WINAPI * sysUnhookWindowsHookEx)( HHOOK hhk) = UnhookWindowsHookEx;
 BOOL WINAPI myUnhookWindowsHookEx( HHOOK hhk)
 {
 	DWORD dwThreadId = ::GetCurrentThreadId();
-	dbgprint("myUnhookWindowsHookEx hhk=%d dwThreadId=%d", hhk, dwThreadId);
+	DBGPRINT("myUnhookWindowsHookEx hhk=%d dwThreadId=%d", hhk, dwThreadId);
 	return sysUnhookWindowsHookEx(hhk);
 }
 
@@ -230,13 +230,13 @@ int (WSAAPI * sysSend)( IN SOCKET s, IN const char FAR * buf, IN int len, IN int
 int WSAAPI mySend( IN SOCKET s, IN const char FAR * buf, IN int len, IN int flags )
 {
 	DWORD dwThreadId = ::GetCurrentThreadId();
-	dbgprint("Send ThreadId=%d socket=%u length=%d", dwThreadId, s, len);
+	DBGPRINT("Send ThreadId=%d socket=%u length=%d", dwThreadId, s, len);
     if(buf != NULL && len > 0)
     {
         char* pBuf = (char*)malloc(len*3);
         memset(pBuf, 0, len*3);
         HexToStr((BYTE*)buf, len, pBuf);
-        dbgprint(pBuf);
+        DBGPRINT(pBuf);
         //gSendLog.Log(pBuf);
         free(pBuf);
     }
@@ -248,13 +248,13 @@ int WSAAPI myRecv( IN SOCKET s, OUT char FAR * buf, IN int len, IN int flags )
 {
 	DWORD dwThreadId = ::GetCurrentThreadId();
 	int rtn = sysRecv(s, buf, len, flags);
-	dbgprint("Recv ThreadId=%d socket=%u length=%d", dwThreadId, s, rtn);
+	DBGPRINT("Recv ThreadId=%d socket=%u length=%d", dwThreadId, s, rtn);
     if(buf != NULL && rtn > 0)
     {
         char* pBuf = (char*)malloc(rtn*3);
         memset(pBuf, 0, rtn*3);
         HexToStr((BYTE*)buf, rtn, pBuf);
-        dbgprint(pBuf);
+        DBGPRINT(pBuf);
         //gRecvLog.Log(pBuf);
         free(pBuf);
     }
@@ -266,8 +266,8 @@ int (WSAAPI * sysSendTo)( IN SOCKET s, IN const char FAR * buf, IN int len, IN i
 int WSAAPI mySendTo( IN SOCKET s, IN const char FAR * buf, IN int len, IN int flags, IN const struct sockaddr FAR * to, IN int tolen )
 {
 	DWORD dwThreadId = ::GetCurrentThreadId();
-	dbgprint("SendTo dwThreadId=%d length=%d", dwThreadId, len);
-	dbgprint("data:%s", buf);
+	DBGPRINT("SendTo dwThreadId=%d length=%d", dwThreadId, len);
+	DBGPRINT("data:%s", buf);
 	return sysSendTo(s, buf, len, flags, to, tolen);
 }
 
@@ -276,8 +276,8 @@ int WSAAPI myRecvFrom( IN SOCKET s, OUT char FAR * buf, IN int len, IN int flags
 {
 	DWORD dwThreadId = ::GetCurrentThreadId();
 	int rtn = sysRecvFrom(s, buf, len, flags, from, fromlen);
-	dbgprint("RecvFrom dwThreadId=%d length=%d", dwThreadId, rtn);
-	dbgprint("data:%s", buf);
+	DBGPRINT("RecvFrom dwThreadId=%d length=%d", dwThreadId, rtn);
+	DBGPRINT("data:%s", buf);
 
 	return rtn;
 }
@@ -300,13 +300,13 @@ int WSAAPI myWSASend( SOCKET s,
 					  )
 {
 	DWORD dwPid = ::GetCurrentProcessId();//::GetCurrentThreadId();
-	dbgprint("WSASend pid=%d length=%d", dwPid, dwBufferCount);
+	DBGPRINT("WSASend pid=%d length=%d", dwPid, dwBufferCount);
     if(lpBuffers != NULL && dwBufferCount > 0)
     {
         char* pBuf = (char*)malloc(dwBufferCount*3);
         memset(pBuf, 0, dwBufferCount*3);
         HexToStr((BYTE*)lpBuffers, dwBufferCount, pBuf);
-        dbgprint(pBuf);
+        DBGPRINT(pBuf);
         //gSendLog.Log(pBuf);
         free(pBuf);
     }
@@ -346,13 +346,13 @@ int WSAAPI myWSARecv( SOCKET s,
 		lpFlags, 
 		lpOverlapped, 
 		lpCompletionRoutine);
-	dbgprint("WSARecv pid=%d length=%d", dwPid, *lpNumberOfBytesRecvd);
+	DBGPRINT("WSARecv pid=%d length=%d", dwPid, *lpNumberOfBytesRecvd);
     if(lpBuffers != NULL && *lpNumberOfBytesRecvd > 0)
     {
         char* pBuf = (char*)malloc(*lpNumberOfBytesRecvd*3);
         memset(pBuf, 0, *lpNumberOfBytesRecvd*3);
         HexToStr((BYTE*)lpBuffers, *lpNumberOfBytesRecvd, pBuf);
-        dbgprint(pBuf);
+        DBGPRINT(pBuf);
         //gRecvLog.Log(pBuf);
         free(pBuf);
     }
@@ -365,7 +365,7 @@ BOOL (WINAPI * sysTerminateProcess)( HANDLE hProcess, UINT uExitCode ) = Termina
 BOOL WINAPI myTerminateProcess( HANDLE hProcess, UINT uExitCode )
 {
 	DWORD dwThreadId = ::GetCurrentThreadId();
-	dbgprint("myTerminateProcessdwThreadId=%d", dwThreadId);
+	DBGPRINT("myTerminateProcessdwThreadId=%d", dwThreadId);
 	//return TRUE;
 	return sysTerminateProcess(hProcess, uExitCode);
 }
@@ -390,13 +390,13 @@ BOOL WINAPI myWriteFile(
     //char szFileName[MAX_PATH];
     //memset(szFileName, 0, MAX_PATH);
     //GetFileNameByHandle(hFile, szFileName, MAX_PATH);
-    dbgprint("WriteFile ThreadId=%d FileHandle=%u Length=%d", dwThreadId, hFile, nNumberOfBytesToWrite);
+    DBGPRINT("WriteFile ThreadId=%d FileHandle=%u Length=%d", dwThreadId, hFile, nNumberOfBytesToWrite);
     if(lpBuffer != NULL && nNumberOfBytesToWrite > 0)
     {
         char* pBuf = (char*)malloc(nNumberOfBytesToWrite*3);
         memset(pBuf, 0, nNumberOfBytesToWrite*3);
         HexToStr((BYTE*)lpBuffer, nNumberOfBytesToWrite, pBuf);
-        dbgprint(pBuf);
+        DBGPRINT(pBuf);
         // 注意这里不能写入日志文件，写入时调用WriteFile，形成递归死循环！！！
         //gSendLog.Log(pBuf);
         free(pBuf);
@@ -424,13 +424,13 @@ BOOL WINAPI myReadFile(
     //char szFileName[MAX_PATH];
     //memset(szFileName, 0, MAX_PATH);
     //GetFileNameByHandle(hFile, szFileName, MAX_PATH);
-    dbgprint("ReadFile ThreadId=%d FileHandle=%u Length=%d", dwThreadId, hFile, *lpNumberOfBytesRead);
+    DBGPRINT("ReadFile ThreadId=%d FileHandle=%u Length=%d", dwThreadId, hFile, *lpNumberOfBytesRead);
     if(lpBuffer != NULL && *lpNumberOfBytesRead > 0)
     {
         char* pBuf = (char*)malloc(*lpNumberOfBytesRead*3);
         memset(pBuf, 0, *lpNumberOfBytesRead*3);
         HexToStr((BYTE*)lpBuffer, *lpNumberOfBytesRead, pBuf);
-        dbgprint(pBuf);
+        DBGPRINT(pBuf);
         //gRecvLog.Log(pBuf);
         free(pBuf);
     }
@@ -439,6 +439,9 @@ BOOL WINAPI myReadFile(
 
 BOOL DoDetour()
 {
+    DWORD dwThreadId = ::GetCurrentThreadId();
+    DBGPRINT("Detour ThreadId=%d", dwThreadId);
+
     //DetourApi(&(PVOID&)TrueSleep, TimedSleep);
     //DetourApi(&(PVOID&)sysIsDebuggerPresent, myIsDebuggerPresent);
     //DetourApi(&(PVOID&)sysSetWindowsHookExA, mySetWindowsHookExA);
@@ -451,14 +454,17 @@ BOOL DoDetour()
     //DetourApi(&(PVOID&)sysRecvFrom, myRecvFrom);
     //DetourApi(&(PVOID&)sysWSASend, myWSASend);
     //DetourApi(&(PVOID&)sysWSARecv, myWSARecv);
-	//DetourApi(&(PVOID&)sysWriteFile, myWriteFile);
-	//DetourApi(&(PVOID&)sysReadFile, myReadFile);
+	DetourApi(&(PVOID&)sysWriteFile, myWriteFile);
+	DetourApi(&(PVOID&)sysReadFile, myReadFile);
 
 	return TRUE;
 }
 
 BOOL DoUndetour()
 {
+    DWORD dwThreadId = ::GetCurrentThreadId();
+    DBGPRINT("Undetour ThreadId=%d", dwThreadId);
+
     //UnDetourApi(&(PVOID&)TrueSleep, TimedSleep);
     //UnDetourApi(&(PVOID&)sysIsDebuggerPresent, myIsDebuggerPresent);
     //UnDetourApi(&(PVOID&)sysSetWindowsHookExA, mySetWindowsHookExA);
@@ -471,8 +477,8 @@ BOOL DoUndetour()
     //UnDetourApi(&(PVOID&)sysRecvFrom, myRecvFrom);
     //UnDetourApi(&(PVOID&)sysWSASend, myWSASend);
     //UnDetourApi(&(PVOID&)sysWSARecv, myWSARecv);
-    //UnDetourApi(&(PVOID&)sysWriteFile, myWriteFile);
-    //UnDetourApi(&(PVOID&)sysReadFile, myReadFile);
+    UnDetourApi(&(PVOID&)sysWriteFile, myWriteFile);
+    UnDetourApi(&(PVOID&)sysReadFile, myReadFile);
 
 	return TRUE;
 }
